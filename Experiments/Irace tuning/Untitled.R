@@ -1,10 +1,11 @@
-# Learning stuff...
+# Learning...
 
 scenario <- irace::defaultScenario()
-scenario$targetRunner <- "runMOEADr"
 scenario$trainInstancesDir <- ""
-scenario$seed <- 20040408
-scenario$parallel <- 3
+scenario$seed <- 123456
+library(parallel)
+nc <- parallel::detectCores() - 1
+scenario$parallel <- nc
 
 parameters <- readParameters("parameters.txt")
 
@@ -86,4 +87,6 @@ targetRunner <- function(experiment, scenario){
 
   out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
                constraint, scaling, stopcrit, showpars, seed)
+
+
 }
