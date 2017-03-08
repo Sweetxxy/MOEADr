@@ -6,6 +6,12 @@ output: html_document
 
 This file contains the experimental setup for the MOEA/D tuning experiments using the MOEADr framework. This experiment employs the standard implementation of the [Iterated Racing](http://iridia.ulb.ac.be/irace/), available in the R package [irace](https://cran.r-project.org/web/packages/irace/index.html) version 2.1.
 
+## Install manuscript version
+```{r}
+require(devtools)
+devtools::install_github("fcampelo/MOEADr/MOEADr@Manuscript-Version")
+```
+
 ## Initial setup
 ```{r}
 require(irace)
@@ -49,6 +55,7 @@ targetRunner <- function(experiment, scenario){
   conf <- experiment$configuration
   inst <- experiment$id.instance
   
+  #=============================================
   # Assemble moead input lists
   ## 1. Problem
   fdef  <- unlist(strsplit(inst, split = "_"))
@@ -129,6 +136,7 @@ targetRunner <- function(experiment, scenario){
     if (variation[[i]]$name == "localsearch") {
       variation[[i]]$type     <- conf$ls.type
       variation[[i]]$gamma.ls <- conf$gamma.ls
+      variation[[i]]$trunc.x  <- TRUE
     }
   }
   
@@ -136,10 +144,16 @@ targetRunner <- function(experiment, scenario){
   ## 11. Seed
   seed <- conf$seed
   
+  #=============================================
+  # Run MOEA/D
   out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
                constraint, scaling, stopcrit, showpars, seed)
   
-  
+  #=============================================
+  # return IGD
+  Yref <- as.matrix(read.table(paste0("./pf_data/", 
+                                      fdef[1], fdef[2], ".dat")))
+  return(calcIGD(Y = out$Y, Yref = Yref))
 }
 ```
 
