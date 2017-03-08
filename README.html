@@ -147,16 +147,14 @@ if (packageVersion(&quot;MOEADr&quot;) != &quot;0.1.0.0&quot;) {
   stop(&quot;Wrong MOEADr version: please install the manuscript version using the code block above&quot;)
 }
 
-# Build default scenario
-scenario &lt;- irace::defaultScenario()
-
-# Define scenario variables:
-nc &lt;- parallel::detectCores() - 1
-scenario$parallel &lt;- nc # Number of cores to be used by irace
-scenario$seed &lt;- 123456 # Seed for the experiment
-scenario$targetRunner &lt;- &quot;targetRunner&quot; # Runner function (def. below)
+# Build scenario
+scenario              &lt;- irace::defaultScenario()
+nc                    &lt;- parallel::detectCores() - 1
+scenario$parallel     &lt;- nc # Number of cores to be used by irace
+scenario$seed         &lt;- 123456 # Seed for the experiment
+scenario$targetRunner &lt;- &quot;target.runner&quot; # Runner function (def. below)
 scenario$targetRunnerRetries &lt;- 5 # Retries if targetRunner fails to run
-scenario$maxExperiments      &lt;- 50000 # Tuning budget
+scenario$maxExperiments      &lt;- 20000 # Tuning budget
 
 # Read tunable parameter list from file
 parameters &lt;- readParameters(&quot;./Experiments/Irace tuning/parameters.txt&quot;)</code></pre>
@@ -176,22 +174,25 @@ scenario$instances &lt;- paste0(allfuns[,1], &quot;_&quot;, allfuns[,2])</code><
 </div>
 <div id="targetrunner-function-for-irace" class="section level3">
 <h3>targetRunner function for <em>irace</em></h3>
-<pre class="r"><code>targetRunner &lt;- function(experiment, scenario){
+<pre class="r"><code>target.runner &lt;- function(experiment, scenario){
   conf &lt;- experiment$configuration
-  inst &lt;- experiment$id.instance
-  
+  inst &lt;- experiment$instance
+  saveRDS(experiment,&quot;tmp.rds&quot;)
   #=============================================
   # Assemble moead input lists
   ## 1. Problem
-  fdef  &lt;- unlist(strsplit(inst, split = &quot;_&quot;))
-  myfun &lt;- smoof::makeUFFunction(dimensions = as.numeric(fdef[3]),
-                                 id         = as.numeric(fdef[2]))
+  fdef    &lt;- unlist(strsplit(inst, split = &quot;_&quot;))
+  uffun   &lt;- smoof::makeUFFunction(dimensions = as.numeric(fdef[3]),
+                                   id         = as.numeric(fdef[2]))
+  myfun   &lt;- make_vectorized_smoof(prob.name  = &quot;UF&quot;,
+                                   dimensions = as.numeric(fdef[3]),
+                                   id         = as.numeric(fdef[2]))
   
-  fattr &lt;- attr(myfun, &quot;par.set&quot;)
+  fattr   &lt;- attr(uffun, &quot;par.set&quot;)
   problem &lt;- list(name       = myfun,
                   xmin       = fattr$pars$x$lower,
                   xmax       = fattr$pars$x$upper,
-                  m          = attr(myfun, &quot;n.objectives&quot;))
+                  m          = attr(uffun, &quot;n.objectives&quot;))
   
   ##===============
   ## 2. Decomp
@@ -273,7 +274,7 @@ scenario$instances &lt;- paste0(allfuns[,1], &quot;_&quot;, allfuns[,2])</code><
   ##===============
   ## 11. Seed
   seed &lt;- conf$seed
-  
+
   #=============================================
   # Run MOEA/D
   out &lt;- moead(problem, decomp,  aggfun, neighbors, variation, update,
@@ -281,7 +282,7 @@ scenario$instances &lt;- paste0(allfuns[,1], &quot;_&quot;, allfuns[,2])</code><
   
   #=============================================
   # return IGD
-  Yref &lt;- as.matrix(read.table(paste0(&quot;./Experiments/Irace tuning/pf_data/&quot;, 
+  Yref &lt;- as.matrix(read.table(paste0(&quot;./Experiments/Irace tuning/pf_data/&quot;,
                                       fdef[1], fdef[2], &quot;.dat&quot;)))
   return(calcIGD(Y = out$Y, Yref = Yref))
 }</code></pre>

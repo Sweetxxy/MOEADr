@@ -32,16 +32,14 @@ if (packageVersion("MOEADr") != "0.1.0.0") {
   stop("Wrong MOEADr version: please install the manuscript version using the code block above")
 }
 
-# Build default scenario
-scenario <- irace::defaultScenario()
-
-# Define scenario variables:
-nc <- parallel::detectCores() - 1
-scenario$parallel <- nc # Number of cores to be used by irace
-scenario$seed <- 123456 # Seed for the experiment
-scenario$targetRunner <- "targetRunner" # Runner function (def. below)
+# Build scenario
+scenario              <- irace::defaultScenario()
+nc                    <- parallel::detectCores() - 1
+scenario$parallel     <- nc # Number of cores to be used by irace
+scenario$seed         <- 123456 # Seed for the experiment
+scenario$targetRunner <- "target.runner" # Runner function (def. below)
 scenario$targetRunnerRetries <- 5 # Retries if targetRunner fails to run
-scenario$maxExperiments      <- 50000 # Tuning budget
+scenario$maxExperiments      <- 20000 # Tuning budget
 
 # Read tunable parameter list from file
 parameters <- readParameters("./Experiments/Irace tuning/parameters.txt")
@@ -66,22 +64,25 @@ scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
 ### targetRunner function for _irace_
 
 ```{r, eval = FALSE}
-targetRunner <- function(experiment, scenario){
+target.runner <- function(experiment, scenario){
   conf <- experiment$configuration
-  inst <- experiment$id.instance
-  
+  inst <- experiment$instance
+  saveRDS(experiment,"tmp.rds")
   #=============================================
   # Assemble moead input lists
   ## 1. Problem
-  fdef  <- unlist(strsplit(inst, split = "_"))
-  myfun <- smoof::makeUFFunction(dimensions = as.numeric(fdef[3]),
-                                 id         = as.numeric(fdef[2]))
+  fdef    <- unlist(strsplit(inst, split = "_"))
+  uffun   <- smoof::makeUFFunction(dimensions = as.numeric(fdef[3]),
+                                   id         = as.numeric(fdef[2]))
+  myfun   <- make_vectorized_smoof(prob.name  = "UF",
+                                   dimensions = as.numeric(fdef[3]),
+                                   id         = as.numeric(fdef[2]))
   
-  fattr <- attr(myfun, "par.set")
+  fattr   <- attr(uffun, "par.set")
   problem <- list(name       = myfun,
                   xmin       = fattr$pars$x$lower,
                   xmax       = fattr$pars$x$upper,
-                  m          = attr(myfun, "n.objectives"))
+                  m          = attr(uffun, "n.objectives"))
   
   ##===============
   ## 2. Decomp
@@ -163,7 +164,7 @@ targetRunner <- function(experiment, scenario){
   ##===============
   ## 11. Seed
   seed <- conf$seed
-  
+
   #=============================================
   # Run MOEA/D
   out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
@@ -171,7 +172,7 @@ targetRunner <- function(experiment, scenario){
   
   #=============================================
   # return IGD
-  Yref <- as.matrix(read.table(paste0("./Experiments/Irace tuning/pf_data/", 
+  Yref <- as.matrix(read.table(paste0("./Experiments/Irace tuning/pf_data/",
                                       fdef[1], fdef[2], ".dat")))
   return(calcIGD(Y = out$Y, Yref = Yref))
 }

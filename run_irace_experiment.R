@@ -23,11 +23,11 @@ if (packageVersion("MOEADr") != "0.1.0.0") {
 # Build scenario
 scenario              <- irace::defaultScenario()
 nc                    <- parallel::detectCores() - 1
-scenario$parallel     <- 1#nc # Number of cores to be used by irace
+scenario$parallel     <- nc # Number of cores to be used by irace
 scenario$seed         <- 123456 # Seed for the experiment
 scenario$targetRunner <- "target.runner" # Runner function (def. below)
 scenario$targetRunnerRetries <- 5 # Retries if targetRunner fails to run
-scenario$maxExperiments      <- 728 # Tuning budget
+scenario$maxExperiments      <- 20000 # Tuning budget
 
 # Read tunable parameter list from file
 parameters <- readParameters("./Experiments/Irace tuning/parameters.txt")
@@ -50,6 +50,7 @@ scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
 target.runner <- function(experiment, scenario){
   conf <- experiment$configuration
   inst <- experiment$instance
+  saveRDS(experiment,"tmp.rds")
   #=============================================
   # Assemble moead input lists
   ## 1. Problem
