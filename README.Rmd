@@ -188,13 +188,13 @@ This tuning experiment was intended at exploring the potential of the MOEADr fra
 
 - Constraint handling: *none* (since the problems are unconstrained)
 - Variation stack: we opted for defining a variation stack with between 3 and 4 operators, using the following rationale:  
-  - first and second operators chosen from the existing "traditional" variation operators available in the MOEADr package: *SBX*, *Polynomial mutation*, *Differential mutation*, and *Binomial Recombination*  
-  - third operator: can be any of the operators listed above, or *none* (in which case a third operator is not included)  
-  - fourth operator: can be either *Local search* (followed by truncation of the resulting candidate solutions to the variable limits) or just the truncation operator. Notice that candidate solutions are always truncated at the end of the variation stack.  
-  - specific parameters of each operator are tuned independently for each position (e.g., if a configuration with two sequential SBX operators happens, each one has its own independent set of parameters)  
-  - local search done probabilistically (using $\gamma_{ls}\in(0,0.5)$) when local search is present.  
-  - *Inverted PBI* was not included as a possible scalarization function, since we couldn't validate the MOEADr implementation against the original code (our attempts to reach the author remain unanswered)
-  - MSLD was not included as a possible decomposition method, since we are dealing only with 2 and 3 objectives, which makes it generally unnecessary.
+- first and second operators chosen from the existing "traditional" variation operators available in the MOEADr package: *SBX*, *Polynomial mutation*, *Differential mutation*, and *Binomial Recombination*  
+- third operator: can be any of the operators listed above, or *none* (in which case a third operator is not included)  
+- fourth operator: can be either *Local search* (followed by truncation of the resulting candidate solutions to the variable limits) or just the truncation operator. Notice that candidate solutions are always truncated at the end of the variation stack.  
+- specific parameters of each operator are tuned independently for each position (e.g., if a configuration with two sequential SBX operators happens, each one has its own independent set of parameters)  
+- local search done probabilistically (using $\gamma_{ls}\in(0,0.5)$) when local search is present.  
+- *Inverted PBI* was not included as a possible scalarization function, since we couldn't validate the MOEADr implementation against the original code (our attempts to reach the author remain unanswered)
+- MSLD was not included as a possible decomposition method, since we are dealing only with 2 and 3 objectives, which makes it generally unnecessary.
 
 
 ## References
@@ -202,23 +202,23 @@ This tuning experiment was intended at exploring the potential of the MOEADr fra
 ---
 references:
 - id: Bezerra2016
-  title: 'Automatic Component-wise Design of Multi-objective Evolutionary
+title: 'Automatic Component-wise Design of Multi-objective Evolutionary
 Algorithms'
-  author: 
-    - family: Bezerra
-      given: Leonardo
-    - family: López-Ibañez
-      given: Manuel
-    - family: Stützle
-      given: Thomas
-  container-title: 'IEEE Trans. Evol. Comp.'
-  volume: 20
-  issue: 3
-  page: 403-417
-  issued:
-    year: 2016
-    month: 8
-  URL: 'http://dx.doi.org/10.1109/TEVC.2015.2474158'
-  DOI: 10.1109/TEVC.2015.2474158
-  type: article-journal
+author: 
+- family: Bezerra
+given: Leonardo
+- family: López-Ibañez
+given: Manuel
+- family: Stützle
+given: Thomas
+container-title: 'IEEE Trans. Evol. Comp.'
+volume: 20
+issue: 3
+page: 403-417
+issued:
+year: 2016
+month: 8
+URL: 'http://dx.doi.org/10.1109/TEVC.2015.2474158'
+DOI: 10.1109/TEVC.2015.2474158
+type: article-journal
 ---
