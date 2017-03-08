@@ -27,6 +27,10 @@ The reference Pareto-optimal points used for the IGD calculations were obtained 
 suppressPackageStartupMessages(require(irace))
 suppressPackageStartupMessages(require(parallel))
 suppressPackageStartupMessages(require(smoof))
+suppressPackageStartupMessages(require(MOEADr))
+if (packageVersion("MOEADr") != "0.1.0.0") {
+  stop("Wrong MOEADr version: please install the manuscript version using the code block above")
+}
 
 # Build default scenario
 scenario <- irace::defaultScenario()
@@ -37,6 +41,7 @@ scenario$parallel <- nc # Number of cores to be used by irace
 scenario$seed <- 123456 # Seed for the experiment
 scenario$targetRunner <- "targetRunner" # Runner function (def. below)
 scenario$targetRunnerRetries <- 5 # Retries if targetRunner fails to run
+scenario$maxExperiments      <- 50000 # Tuning budget
 
 # Read tunable parameter list from file
 parameters <- readParameters("./Experiments/Irace tuning/parameters.txt")
@@ -202,23 +207,23 @@ This tuning experiment was intended at exploring the potential of the MOEADr fra
 ---
 references:
 - id: Bezerra2016
-title: 'Automatic Component-wise Design of Multi-objective Evolutionary
+  title: 'Automatic Component-wise Design of Multi-objective Evolutionary
 Algorithms'
-author: 
-- family: Bezerra
-given: Leonardo
-- family: López-Ibañez
-given: Manuel
-- family: Stützle
-given: Thomas
-container-title: 'IEEE Trans. Evol. Comp.'
-volume: 20
-issue: 3
-page: 403-417
-issued:
-year: 2016
-month: 8
-URL: 'http://dx.doi.org/10.1109/TEVC.2015.2474158'
-DOI: 10.1109/TEVC.2015.2474158
-type: article-journal
+  author: 
+    - family: Bezerra
+      given: Leonardo
+    - family: López-Ibañez
+      given: Manuel
+    - family: Stützle
+      given: Thomas
+  container-title: 'IEEE Trans. Evol. Comp.'
+  volume: 20
+  issue: 3
+  page: 403-417
+  issued:
+    year: 2016
+    month: 8
+  URL: 'http://dx.doi.org/10.1109/TEVC.2015.2474158'
+  DOI: 10.1109/TEVC.2015.2474158
+  type: article-journal
 ---

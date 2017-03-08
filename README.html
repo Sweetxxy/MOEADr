@@ -142,6 +142,10 @@ $(document).ready(function () {
 <pre class="r"><code>suppressPackageStartupMessages(require(irace))
 suppressPackageStartupMessages(require(parallel))
 suppressPackageStartupMessages(require(smoof))
+suppressPackageStartupMessages(require(MOEADr))
+if (packageVersion(&quot;MOEADr&quot;) != &quot;0.1.0.0&quot;) {
+  stop(&quot;Wrong MOEADr version: please install the manuscript version using the code block above&quot;)
+}
 
 # Build default scenario
 scenario &lt;- irace::defaultScenario()
@@ -152,6 +156,7 @@ scenario$parallel &lt;- nc # Number of cores to be used by irace
 scenario$seed &lt;- 123456 # Seed for the experiment
 scenario$targetRunner &lt;- &quot;targetRunner&quot; # Runner function (def. below)
 scenario$targetRunnerRetries &lt;- 5 # Retries if targetRunner fails to run
+scenario$maxExperiments      &lt;- 50000 # Tuning budget
 
 # Read tunable parameter list from file
 parameters &lt;- readParameters(&quot;./Experiments/Irace tuning/parameters.txt&quot;)</code></pre>

@@ -15,6 +15,10 @@
 suppressPackageStartupMessages(require(irace))
 suppressPackageStartupMessages(require(parallel))
 suppressPackageStartupMessages(require(smoof))
+suppressPackageStartupMessages(require(MOEADr))
+if (packageVersion("MOEADr") != "0.1.0.0") {
+  stop("Wrong MOEADr version: please install the manuscript version using the code block above")
+}
 
 # Build scenario
 scenario              <- irace::defaultScenario()
@@ -23,6 +27,7 @@ scenario$parallel     <- nc # Number of cores to be used by irace
 scenario$seed         <- 123456 # Seed for the experiment
 scenario$targetRunner <- "targetRunner" # Runner function (def. below)
 scenario$targetRunnerRetries <- 5 # Retries if targetRunner fails to run
+scenario$maxExperiments      <- 728 # Tuning budget
 
 # Read tunable parameter list from file
 parameters <- readParameters("./Experiments/Irace tuning/parameters.txt")
@@ -42,10 +47,10 @@ scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
 
 #===============
 ### targetRunner function for _irace_
-targetRunner <- function(experiment, scenario){
+target.runner <- function(experiment, scenario){
   conf <- experiment$configuration
-  inst <- experiment$id.instance
-  
+  inst <- experiment$instance
+
   #=============================================
   # Assemble moead input lists
   ## 1. Problem
