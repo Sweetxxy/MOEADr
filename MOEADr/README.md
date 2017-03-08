@@ -1,5 +1,4 @@
 ## MOEADr package
-[![Build Status](https://api.travis-ci.org/fcampelo/MOEADr.png)](https://travis-ci.org/fcampelo/MOEADr)
 
 ***
 
@@ -19,7 +18,7 @@ Tsukuba, Japan
 
 Modular implementation of the Multiobjective Evolutionary Algorithm with Decomposition (MOEA/D) framework, including several decomposition and scalarization strategies, as well as variation and selection operators.
 
-This is still a development version. For more details please contact the authors above.
+**IMPORTANT**: This is the version used for the experiments in the manuscript. For the most up-to-date version, check the _master_ branch at [https://github.com/fcampelo/MOEADr](https://github.com/fcampelo/MOEADr)
 
 Cheers,  
 Felipe
