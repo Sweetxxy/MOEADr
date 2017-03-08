@@ -1,0 +1,183 @@
+---
+title: "Experimental Setup"
+author: "Felipe Campelo"
+output: html_document
+---
+
+This file contains the experimental setup for the MOEA/D tuning experiments using the MOEADr framework. This experiment employs the standard implementation of the [Iterated Racing](http://iridia.ulb.ac.be/irace/), available in the R package [irace](https://cran.r-project.org/web/packages/irace/index.html) version 2.1.
+
+## Initial setup
+```{r}
+require(irace)
+require(parallel)
+
+# Load default scenario
+scenario <- irace::defaultScenario()
+
+# set seed for experiment
+scenario$seed <- 123456
+
+# Set up number of cores to be used by irace
+nc <- parallel::detectCores() - 1
+scenario$parallel <- nc
+
+
+# Read tunable parameter list from file
+parameters <- readParameters("parameters.txt")
+```
+
+## Definition of the training instances
+In this experiment we adopted the general protocol suggested in [@Bezerra2016], using the CEC'2009 benchmark set [@cec2009] and employing disjoint sets of problem dimensions for tuning and evaluation, by partitioning the number of variables used, with $n_v^{tune} \in \left\{20,\dotsc,60\right\} \backslash n_v^{test}$ and $n_v^{test} \in \left\{30,40,50\right\}$. The standard implementations of these functions available in the R package [smoof](https://cran.r-project.org/web/packages/smoof/index.html) version 1.4.
+
+```{r}
+require(smoof)
+
+fname   <- paste0("UF_", 1:10)
+dims    <- c(20:29, 
+             31:39, 
+             41:49, 
+             51:59)
+allfuns <- expand.grid(fname, dims)
+
+scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
+```
+
+## Define targetRunner function
+
+```{r}
+targetRunner <- function(experiment, scenario){
+  conf <- experiment$configuration
+  inst <- experiment$id.instance
+  
+  # Assemble moead input lists
+  ## 1. Problem
+  fdef  <- unlist(strsplit(inst, split = "_"))
+  myfun <- smoof::makeUFFunction(dimensions = as.numeric(fdef[3]),
+                                 id         = as.numeric(fdef[2]))
+  
+  fattr <- attr(myfun, "par.set")
+  problem <- list(name       = myfun,
+                  xmin       = fattr$pars$x$lower,
+                  xmax       = fattr$pars$x$upper,
+                  m          = attr(myfun, "n.objectives"))
+  
+  ##===============
+  ## 2. Decomp
+  decomp <- list(name = conf$decomp.name)
+  if(decomp$name == "sld") decomp$H <- conf$H
+  if(decomp$name == "Uniform") decomp$N <- conf$N
+  
+  ##===============
+  ## 3. Neighbors
+  neighbors <- list(name    = conf$neighbor.name,
+                    T       = conf$T,
+                    delta.p = conf$delta.p)
+  
+  ##===============
+  ## 4. Aggfun
+  aggfun <- list(name = conf$aggfun.name)
+  if (aggfun$name == "PBI") aggfun$theta <- conf$aggfun.theta
+  
+  ##===============
+  ## 5. Update
+  update <- list(name       = conf$update.name,
+                 UseArchive = conf$UseArchive)
+  if (update$name != "standard") update$nr <- conf$nr
+  if (update$name == "best") update$Tr <- conf$Tr
+  
+  ##===============
+  ## 6. Scaling
+  scaling <- list(name = conf$scaling.name)
+  
+  ##===============
+  ## 7. Constraint
+  constraint<- list(name = "none")
+  
+  ##===============
+  ## 8. Stop criterion
+  stopcrit  <- list(list(name    = "maxeval",
+                         maxeval = 10000))
+  
+  ##===============
+  ## 9. Echoing
+  showpars  <- list(show.iters = "dots",
+                    showevery  = 25)
+  
+  ##===============
+  ## 10. Variation stack
+  variation <- list(list(name = conf$varop1),
+                    list(name = conf$varop2),
+                    list(name = conf$varop3),
+                    list(name = conf$varop4))
+  
+  for (i in seq_along(variation)){
+    if (variation[[i]]$name == "binrec") {
+      variation[[i]]$rho <- get(paste0("binrec.rho", i), conf)
+    }
+    if (variation[[i]]$name == "diffmut") {
+      variation[[i]]$basis <- get(paste0("diffmut.basis", i), conf)
+      variation[[i]]$Phi   <- NULL
+    }
+    if (variation[[i]]$name == "polymut") {
+      variation[[i]]$etam <- get(paste0("polymut.eta", i), conf)
+      variation[[i]]$pm   <- get(paste0("polymut.pm", i), conf)
+    }
+    if (variation[[i]]$name == "sbx") {
+      variation[[i]]$etax <- get(paste0("sbx.eta", i), conf)
+      variation[[i]]$pc   <- get(paste0("sbx.pc", i), conf)
+    }
+    if (variation[[i]]$name == "localsearch") {
+      variation[[i]]$type     <- conf$ls.type
+      variation[[i]]$gamma.ls <- conf$gamma.ls
+    }
+  }
+  
+  ##===============
+  ## 11. Seed
+  seed <- conf$seed
+  
+  out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
+               constraint, scaling, stopcrit, showpars, seed)
+  
+  
+}
+```
+
+
+## References
+
+---
+references:
+- id: Bezerra2016
+title: 'Automatic Component-wise Design of Multi-objective Evolutionary
+Algorithms'
+author: 
+- family: Bezerra
+given: Leonardo
+- family: López-Ibañez
+given: Manuel
+- family: Stützle
+given: Thomas
+container-title: 'IEEE Trans. Evol. Comp.'
+volume: 20
+issue: 3
+page: 403-417
+issued:
+year: 2016
+month: 8
+URL: 'http://dx.doi.org/10.1109/TEVC.2015.2474158'
+DOI: 10.1109/TEVC.2015.2474158
+type: article-journal
+
+- id: cec2009
+title: 'Multiobjective optimization test instances for the CEC 2009 special session and competition'
+author: 
+- family: Zhang et al.
+given: Qingfu
+container-title: 'University of Essex, Colchester, UK and Nanyang Technological University, Singapore. Technical Report'
+volume: 264
+issued:
+year: 2008
+URL: 'http://dces.essex.ac.uk/staff/zhang/MOEAcompetition/cec09testproblem0904.pdf.pdf'
+type: article-journal
+---

@@ -1,8 +1,12 @@
-# Learning...
+# Setting up the experimental parameters
 
 scenario <- irace::defaultScenario()
-scenario$trainInstancesDir <- ""
 scenario$seed <- 123456
+
+
+
+
+
 library(parallel)
 nc <- parallel::detectCores() - 1
 scenario$parallel <- nc
