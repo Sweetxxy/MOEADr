@@ -1,8 +1,6 @@
 ### Parameter file
 # name		      switch	type	values [conditions (using R syntax)]
 decomp.name     " "     c     (SLD,Uniform)
-H               " "     i     (49,199) | decomp.name == "sld"
-N               " "     i     (50,200) | decomp.name == "uniform"
 aggfun.name     " "     c     (WS,WT,AWT,PBI)
 aggfun.theta    " "     r     (0,50) | aggfun.name == "pbi"
 neighbor.name   " "     c     (lambda,x)
