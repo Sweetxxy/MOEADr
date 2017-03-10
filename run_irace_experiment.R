@@ -21,12 +21,13 @@ if (packageVersion("MOEADr") != "0.1.0.0") {
 }
 
 # Build scenario
-scenario              <- irace::defaultScenario()
-nc                    <- parallel::detectCores() - 1
-scenario$parallel     <- nc # Number of cores to be used by irace
-scenario$seed         <- 123456 # Seed for the experiment
-scenario$targetRunner <- "target.runner" # Runner function (def. below)
-scenario$targetRunnerRetries <- 5 # Retries if targetRunner fails to run
+scenario               <- irace::defaultScenario()
+nc                     <- parallel::detectCores() - 1
+scenario$parallel      <- nc # Number of cores to be used by irace
+scenario$seed          <- 123456 # Seed for the experiment
+scenario$targetRunner  <- "target.runner" # Runner function (def. below)
+scenario$forbiddenFile <- "./Experiments/Irace tuning/forbidden.txt"
+scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
 scenario$maxExperiments      <- 20000 # Tuning budget
 
 # Read tunable parameter list from file
@@ -40,29 +41,34 @@ dims    <- c(20:29,
              31:39,
              41:49,
              51:60)
-allfuns <- expand.grid(fname, dims)
+allfuns <- expand.grid(fname, dims, stringsAsFactors = FALSE)
 
 scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
 
+# define all training functions
+for (i in 1:nrow(allfuns)){
+  assign(x     = scenario$instances[i], 
+         value = make_vectorized_smoof(prob.name  = "UF", 
+                                       dimensions = allfuns[i, 2],
+                                       id         = as.numeric(strsplit(allfuns[i, 1], "_")[[1]][2])))
+}
 
 #===============
 ### targetRunner function for _irace_
 target.runner <- function(experiment, scenario){
+  force(experiment)
+  
   conf <- experiment$configuration
   inst <- experiment$instance
-  saveRDS(experiment,"tmp.rds")
+
   #=============================================
   # Assemble moead input lists
   ## 1. Problem
   fdef    <- unlist(strsplit(inst, split = "_"))
   uffun   <- smoof::makeUFFunction(dimensions = as.numeric(fdef[3]),
                                    id         = as.numeric(fdef[2]))
-  myfun   <- make_vectorized_smoof(prob.name  = "UF",
-                                   dimensions = as.numeric(fdef[3]),
-                                   id         = as.numeric(fdef[2]))
-  
   fattr   <- attr(uffun, "par.set")
-  problem <- list(name       = myfun,
+  problem <- list(name       = inst,
                   xmin       = fattr$pars$x$lower,
                   xmax       = fattr$pars$x$upper,
                   m          = attr(uffun, "n.objectives"))
@@ -71,10 +77,10 @@ target.runner <- function(experiment, scenario){
   ## 2. Decomp
   decomp <- list(name = conf$decomp.name)
   if (problem$m == 2){ # <-- 2 objectives
-    if(decomp$name == "sld") decomp$H <- 99 # <-- yields N = 100
+    if(decomp$name == "SLD") decomp$H <- 99 # <-- yields N = 100
     if(decomp$name == "Uniform") decomp$N <- 100
   } else { # <-- 3 objectives
-    if(decomp$name == "sld") decomp$H <- 16 # <-- yields N = 153
+    if(decomp$name == "SLD") decomp$H <- 16 # <-- yields N = 153
     if(decomp$name == "Uniform") decomp$N <- 150
   }
   
@@ -98,7 +104,7 @@ target.runner <- function(experiment, scenario){
   
   ##===============
   ## 6. Scaling
-  scaling <- list(name = conf$scaling.name)
+  scaling <- list(name = "simple")
   
   ##===============
   ## 7. Constraint
@@ -107,12 +113,11 @@ target.runner <- function(experiment, scenario){
   ##===============
   ## 8. Stop criterion
   stopcrit  <- list(list(name    = "maxeval",
-                         maxeval = 300000))
+                         maxeval = 100000))
   
   ##===============
   ## 9. Echoing
-  showpars  <- list(show.iters = "dots",
-                    showevery  = 25)
+  showpars  <- list(show.iters = "dots", showevery = 250)
   
   ##===============
   ## 10. Variation stack
@@ -126,7 +131,7 @@ target.runner <- function(experiment, scenario){
       variation[[i]]$rho <- get(paste0("binrec.rho", i), conf)
     }
     if (variation[[i]]$name == "diffmut") {
-      variation[[i]]$basis <- get(paste0("diffmut.basis", i), conf)
+      variation[[i]]$basis <- "rand"
       variation[[i]]$Phi   <- NULL
     }
     if (variation[[i]]$name == "polymut") {
@@ -147,7 +152,13 @@ target.runner <- function(experiment, scenario){
   ##===============
   ## 11. Seed
   seed <- conf$seed
-
+  
+  # saveRDS(list(problem = problem, decomp = decomp,  
+  #              aggfun = aggfun, neighbors = neighbors, 
+  #              variation = variation, update = update,
+  #              constraint = constraint, scaling = scaling, 
+  #              stopcrit = stopcrit, showpars = showpars, 
+  #              seed = seed), "tmp.rds")
   #=============================================
   # Run MOEA/D
   out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
@@ -157,8 +168,23 @@ target.runner <- function(experiment, scenario){
   # return IGD
   Yref <- as.matrix(read.table(paste0("./Experiments/Irace tuning/pf_data/",
                                       fdef[1], fdef[2], ".dat")))
-  return(calcIGD(Y = out$Y, Yref = Yref))
+  return(list(cost = calcIGD(Y = out$Y, Yref = Yref)))
 }
 
 ## Running the experiment
 irace.output <- irace::irace(scenario, parameters)
+
+saveRDS(irace.output, "./Experiments/Irace tuning/RESULTS.rds")
+
+# a <- readRDS("tmp.rds")
+# problem    <- a$problem
+# decomp     <- a$decomp
+# aggfun     <- a$aggfun
+# neighbors  <- a$neighbors
+# variation  <- a$variation
+# update     <- a$update
+# constraint <- a$constraint
+# scaling    <- a$scaling
+# stopcrit   <- a$stopcrit
+# showpars   <- a$showpars
+# seed       <- a$seed

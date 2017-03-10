@@ -26,7 +26,3 @@
 .Rproj.user
 # Rprof temporary files
 Rprof.out
-
-*.Rdata
-
-*.rds
