@@ -23,10 +23,10 @@ if (packageVersion("MOEADr") != "0.1.0.0") {
 # Build scenario
 scenario              <- irace::defaultScenario()
 nc                    <- parallel::detectCores() - 1
-scenario$parallel     <- nc # Number of cores to be used by irace
+scenario$parallel     <- 1#nc # Number of cores to be used by irace
 scenario$seed         <- 123456 # Seed for the experiment
 scenario$targetRunner <- "target.runner" # Runner function (def. below)
-scenario$targetRunnerRetries <- 5 # Retries if targetRunner fails to run
+scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
 scenario$maxExperiments      <- 20000 # Tuning budget
 
 # Read tunable parameter list from file
@@ -112,11 +112,11 @@ target.runner <- function(experiment, scenario){
   ##===============
   ## 8. Stop criterion
   stopcrit  <- list(list(name    = "maxeval",
-                         maxeval = 100000))
+                         maxeval = 10000))
   
   ##===============
   ## 9. Echoing
-  showpars  <- list(show.iters = "dots")
+  showpars  <- list(show.iters = "dots", showevery = 10)
   
   ##===============
   ## 10. Variation stack
