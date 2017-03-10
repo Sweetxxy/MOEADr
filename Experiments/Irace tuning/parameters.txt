@@ -1,16 +1,15 @@
 ### Parameter file
 # name		      switch	type	values [conditions (using R syntax)]
 decomp.name     " "     c     (SLD,Uniform)
-aggfun.name     " "     c     (WS,WT,AWT,PBI)
-aggfun.theta    " "     r     (0,50) | aggfun.name == "pbi"
+aggfun.name     " "     c     (WT,AWT,PBI)
+aggfun.theta    " "     i     (2,20) | aggfun.name == "pbi"
 neighbor.name   " "     c     (lambda,x)
-T               " "     i     (5,40)
+T               " "     i     (10,40)
 delta.p         " "     r     (0.1,1)
 update.name     " "     c     (standard,best,restricted)
 UseArchive      " "     i     (0,1)
 Tr              " "     i     (4,20) | update.name == "best"
 nr              " "     i     (1,10) | update.name != "standard"
-scaling.name    " "     c     (none,simple)
 varop1          " "     c     (binrec,diffmut,polymut,sbx)
 varop2          " "     c     (binrec,diffmut,polymut,sbx)
 varop3          " "     c     (binrec,diffmut,polymut,sbx,none)

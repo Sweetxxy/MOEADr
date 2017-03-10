@@ -21,11 +21,12 @@ if (packageVersion("MOEADr") != "0.1.0.0") {
 }
 
 # Build scenario
-scenario              <- irace::defaultScenario()
-nc                    <- parallel::detectCores() - 1
-scenario$parallel     <- 1#nc # Number of cores to be used by irace
-scenario$seed         <- 123456 # Seed for the experiment
-scenario$targetRunner <- "target.runner" # Runner function (def. below)
+scenario               <- irace::defaultScenario()
+nc                     <- parallel::detectCores() - 1
+scenario$parallel      <- 1#nc # Number of cores to be used by irace
+scenario$seed          <- 123456 # Seed for the experiment
+scenario$targetRunner  <- "target.runner" # Runner function (def. below)
+scenario$forbiddenFile <- "forbidden.txt"
 scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
 scenario$maxExperiments      <- 20000 # Tuning budget
 
@@ -56,6 +57,7 @@ for (i in 1:nrow(allfuns)){
 ### targetRunner function for _irace_
 target.runner <- function(experiment, scenario){
   force(experiment)
+  saveRDS(experiment, "tmp.rds")
   
   conf <- experiment$configuration
   inst <- experiment$instance
@@ -103,7 +105,7 @@ target.runner <- function(experiment, scenario){
   
   ##===============
   ## 6. Scaling
-  scaling <- list(name = conf$scaling.name)
+  scaling <- list(name = "simple")
   
   ##===============
   ## 7. Constraint
