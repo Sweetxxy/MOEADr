@@ -174,6 +174,8 @@ target.runner <- function(experiment, scenario){
 ## Running the experiment
 irace.output <- irace::irace(scenario, parameters)
 
+saveRDS(irace.output, "./Experiments/Irace tuning/RESULTS.rds")
+
 # a <- readRDS("tmp.rds")
 # problem    <- a$problem
 # decomp     <- a$decomp
