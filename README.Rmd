@@ -33,12 +33,13 @@ if (packageVersion("MOEADr") != "0.1.0.0") {
 }
 
 # Build scenario
-scenario              <- irace::defaultScenario()
-nc                    <- parallel::detectCores() - 1
-scenario$parallel     <- nc # Number of cores to be used by irace
-scenario$seed         <- 123456 # Seed for the experiment
-scenario$targetRunner <- "target.runner" # Runner function (def. below)
-scenario$targetRunnerRetries <- 5 # Retries if targetRunner fails to run
+scenario               <- irace::defaultScenario()
+nc                     <- parallel::detectCores() - 1
+scenario$parallel      <- nc # Number of cores to be used by irace
+scenario$seed          <- 123456 # Seed for the experiment
+scenario$targetRunner  <- "target.runner" # Runner function (def. below)
+scenario$forbiddenFile <- "./Experiments/Irace tuning/forbidden.txt"
+scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
 scenario$maxExperiments      <- 20000 # Tuning budget
 
 # Read tunable parameter list from file
@@ -122,7 +123,7 @@ target.runner <- function(experiment, scenario){
   
   ##===============
   ## 6. Scaling
-  scaling <- list(name = conf$scaling.name)
+  scaling <- list(name = "simple")
   
   ##===============
   ## 7. Constraint
@@ -135,7 +136,7 @@ target.runner <- function(experiment, scenario){
   
   ##===============
   ## 9. Echoing
-  showpars  <- list(show.iters = "dots")
+  showpars  <- list(show.iters = "dots", showevery = 250)
   
   ##===============
   ## 10. Variation stack
@@ -149,7 +150,7 @@ target.runner <- function(experiment, scenario){
       variation[[i]]$rho <- get(paste0("binrec.rho", i), conf)
     }
     if (variation[[i]]$name == "diffmut") {
-      variation[[i]]$basis <- get(paste0("diffmut.basis", i), conf)
+      variation[[i]]$basis <- "rand"
       variation[[i]]$Phi   <- NULL
     }
     if (variation[[i]]$name == "polymut") {
@@ -170,7 +171,7 @@ target.runner <- function(experiment, scenario){
   ##===============
   ## 11. Seed
   seed <- conf$seed
-
+  
   #=============================================
   # Run MOEA/D
   out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
@@ -191,12 +192,13 @@ After performing the experimental setup, the experiment can be performed by simp
 
 ```{r, eval = FALSE}
 irace.output <- irace::irace(scenario, parameters)
+saveRDS(irace.output, "./Experiments/Irace tuning/RESULTS.rds")
 ```
 
 *** 
 
 ## Comments regarding the design of this experiment
-This tuning experiment was intended at exploring the potential of the MOEADr framework in leveraging the capabilities of automated algorithm assembly / tuning offered by the Iterated Racing method. Some design decisions had to be made in the design of this experiment, as detailed below:
+This tuning experiment was intended at exploring the potential of the MOEADr framework in leveraging the capabilities of automated algorithm assembly / tuning offered by the Iterated Racing method. Some design decisions had to be made in the design of this experiment, as detailed below (for a complete view of the search space for tuning, see file _./Experiments/irace tuning/parameters.txt_)
 
 - Constraint handling: *none* (since the problems are unconstrained)
 - Variation stack: we opted for defining a variation stack with between 3 and 4 operators, using the following rationale:  
@@ -205,8 +207,8 @@ This tuning experiment was intended at exploring the potential of the MOEADr fra
 - fourth operator: can be either *Local search* (followed by truncation of the resulting candidate solutions to the variable limits) or just the truncation operator. Notice that candidate solutions are always truncated at the end of the variation stack.  
 - specific parameters of each operator are tuned independently for each position (e.g., if a configuration with two sequential SBX operators happens, each one has its own independent set of parameters)  
 - local search done probabilistically (using $\gamma_{ls}\in(0,0.5)$) when local search is present.  
-- *Inverted PBI* was not included as a possible scalarization function, since we couldn't validate the MOEADr implementation against the original code (our attempts to reach the author remain unanswered)
-- MSLD was not included as a possible decomposition method, since we are dealing only with 2 and 3 objectives, which makes it generally unnecessary.
+- Aggregation functions: WT, AWT, and PBI. *Inverted PBI* was not included as a possible scalarization function, since we couldn't validate the MOEADr implementation against the original code (our attempts to reach the author remain unanswered)
+- Decomposition strategies: SLD and Uniform. *MSLD* was not included as a possible decomposition method, since we are dealing only with 2 and 3 objectives, which makes it generally unnecessary.
 
 
 ## References
