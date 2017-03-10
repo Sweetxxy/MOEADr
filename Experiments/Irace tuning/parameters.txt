@@ -3,6 +3,7 @@
 decomp.name     " "     c     (SLD,Uniform)
 aggfun.name     " "     c     (WT,AWT,PBI)
 aggfun.theta    " "     i     (2,20) | aggfun.name == "PBI"
+neighbor.name   " "     c     (lambda,x)
 T               " "     i     (10,40)
 delta.p         " "     r     (0.1,1)
 update.name     " "     c     (standard,best,restricted)

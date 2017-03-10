@@ -86,7 +86,7 @@ target.runner <- function(experiment, scenario){
   
   ##===============
   ## 3. Neighbors
-  neighbors <- list(name    = "lambda",
+  neighbors <- list(name    = conf$neighbor.name,
                     T       = conf$T,
                     delta.p = conf$delta.p)
   
