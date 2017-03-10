@@ -26,7 +26,7 @@ nc                     <- parallel::detectCores() - 1
 scenario$parallel      <- 1#nc # Number of cores to be used by irace
 scenario$seed          <- 123456 # Seed for the experiment
 scenario$targetRunner  <- "target.runner" # Runner function (def. below)
-scenario$forbiddenFile <- "forbidden.txt"
+scenario$forbiddenFile <- "./Experiments/Irace tuning/forbidden.txt"
 scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
 scenario$maxExperiments      <- 20000 # Tuning budget
 
@@ -57,7 +57,6 @@ for (i in 1:nrow(allfuns)){
 ### targetRunner function for _irace_
 target.runner <- function(experiment, scenario){
   force(experiment)
-  saveRDS(experiment, "tmp.rds")
   
   conf <- experiment$configuration
   inst <- experiment$instance
@@ -87,7 +86,7 @@ target.runner <- function(experiment, scenario){
   
   ##===============
   ## 3. Neighbors
-  neighbors <- list(name    = conf$neighbor.name,
+  neighbors <- list(name    = "lambda",
                     T       = conf$T,
                     delta.p = conf$delta.p)
   
@@ -132,7 +131,7 @@ target.runner <- function(experiment, scenario){
       variation[[i]]$rho <- get(paste0("binrec.rho", i), conf)
     }
     if (variation[[i]]$name == "diffmut") {
-      variation[[i]]$basis <- get(paste0("diffmut.basis", i), conf)
+      variation[[i]]$basis <- "rand"
       variation[[i]]$Phi   <- NULL
     }
     if (variation[[i]]$name == "polymut") {
@@ -153,7 +152,13 @@ target.runner <- function(experiment, scenario){
   ##===============
   ## 11. Seed
   seed <- conf$seed
-
+  
+  # saveRDS(list(problem = problem, decomp = decomp,  
+  #              aggfun = aggfun, neighbors = neighbors, 
+  #              variation = variation, update = update,
+  #              constraint = constraint, scaling = scaling, 
+  #              stopcrit = stopcrit, showpars = showpars, 
+  #              seed = seed), "tmp.rds")
   #=============================================
   # Run MOEA/D
   out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
@@ -168,3 +173,16 @@ target.runner <- function(experiment, scenario){
 
 ## Running the experiment
 irace.output <- irace::irace(scenario, parameters)
+
+# a <- readRDS("tmp.rds")
+# problem    <- a$problem
+# decomp     <- a$decomp
+# aggfun     <- a$aggfun
+# neighbors  <- a$neighbors
+# variation  <- a$variation
+# update     <- a$update
+# constraint <- a$constraint
+# scaling    <- a$scaling
+# stopcrit   <- a$stopcrit
+# showpars   <- a$showpars
+# seed       <- a$seed
