@@ -23,7 +23,7 @@ if (packageVersion("MOEADr") != "0.1.0.0") {
 # Build scenario
 scenario               <- irace::defaultScenario()
 nc                     <- parallel::detectCores() - 1
-scenario$parallel      <- 1#nc # Number of cores to be used by irace
+scenario$parallel      <- nc # Number of cores to be used by irace
 scenario$seed          <- 123456 # Seed for the experiment
 scenario$targetRunner  <- "target.runner" # Runner function (def. below)
 scenario$forbiddenFile <- "./Experiments/Irace tuning/forbidden.txt"

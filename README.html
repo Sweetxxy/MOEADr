@@ -185,7 +185,7 @@ for (i in 1:nrow(allfuns)){
 <h3>targetRunner function for <em>irace</em></h3>
 <pre class="r"><code>target.runner &lt;- function(experiment, scenario){
   force(experiment)
-  
+
   conf &lt;- experiment$configuration
   inst &lt;- experiment$instance
 
@@ -200,7 +200,7 @@ for (i in 1:nrow(allfuns)){
                   xmin       = fattr$pars$x$lower,
                   xmax       = fattr$pars$x$upper,
                   m          = attr(uffun, &quot;n.objectives&quot;))
-  
+
   ##===============
   ## 2. Decomp
   decomp &lt;- list(name = conf$decomp.name)
@@ -211,49 +211,50 @@ for (i in 1:nrow(allfuns)){
     if(decomp$name == &quot;SLD&quot;) decomp$H &lt;- 16 # &lt;-- yields N = 153
     if(decomp$name == &quot;Uniform&quot;) decomp$N &lt;- 150
   }
-  
+
   ##===============
   ## 3. Neighbors
   neighbors &lt;- list(name    = conf$neighbor.name,
                     T       = conf$T,
                     delta.p = conf$delta.p)
-  
+
   ##===============
   ## 4. Aggfun
   aggfun &lt;- list(name = conf$aggfun.name)
   if (aggfun$name == &quot;PBI&quot;) aggfun$theta &lt;- conf$aggfun.theta
-  
+
   ##===============
   ## 5. Update
   update &lt;- list(name       = conf$update.name,
                  UseArchive = conf$UseArchive)
   if (update$name != &quot;standard&quot;) update$nr &lt;- conf$nr
   if (update$name == &quot;best&quot;) update$Tr &lt;- conf$Tr
-  
+
   ##===============
   ## 6. Scaling
   scaling &lt;- list(name = &quot;simple&quot;)
-  
+
   ##===============
   ## 7. Constraint
   constraint&lt;- list(name = &quot;none&quot;)
-  
+
   ##===============
   ## 8. Stop criterion
   stopcrit  &lt;- list(list(name    = &quot;maxeval&quot;,
                          maxeval = 100000))
-  
+
   ##===============
   ## 9. Echoing
-  showpars  &lt;- list(show.iters = &quot;dots&quot;, showevery = 250)
-  
+  showpars  &lt;- list(show.iters = &quot;dots&quot;, showevery = 100)
+
   ##===============
   ## 10. Variation stack
   variation &lt;- list(list(name = conf$varop1),
                     list(name = conf$varop2),
                     list(name = conf$varop3),
-                    list(name = conf$varop4))
-  
+                    list(name = conf$varop4),
+                    list(name = &quot;truncate&quot;))
+
   for (i in seq_along(variation)){
     if (variation[[i]]$name == &quot;binrec&quot;) {
       variation[[i]]$rho &lt;- get(paste0(&quot;binrec.rho&quot;, i), conf)
@@ -273,19 +274,24 @@ for (i in 1:nrow(allfuns)){
     if (variation[[i]]$name == &quot;localsearch&quot;) {
       variation[[i]]$type     &lt;- conf$ls.type
       variation[[i]]$gamma.ls &lt;- conf$gamma.ls
-      variation[[i]]$trunc.x  &lt;- TRUE
     }
   }
-  
+
   ##===============
   ## 11. Seed
   seed &lt;- conf$seed
-  
+
+  # saveRDS(list(problem = problem, decomp = decomp,
+  #              aggfun = aggfun, neighbors = neighbors,
+  #              variation = variation, update = update,
+  #              constraint = constraint, scaling = scaling,
+  #              stopcrit = stopcrit, showpars = showpars,
+  #              seed = seed), &quot;tmp.rds&quot;)
   #=============================================
   # Run MOEA/D
   out &lt;- moead(problem, decomp,  aggfun, neighbors, variation, update,
                constraint, scaling, stopcrit, showpars, seed)
-  
+
   #=============================================
   # return IGD
   Yref &lt;- as.matrix(read.table(paste0(&quot;./Experiments/Irace tuning/pf_data/&quot;,
@@ -313,8 +319,8 @@ saveRDS(irace.output, &quot;./Experiments/Irace tuning/RESULTS.rds&quot;)</code>
 </li>
 <li>third operator: can be any of the operators listed above, or <em>none</em> (in which case a third operator is not included)<br />
 </li>
-<li>fourth operator: can be either <em>Local search</em> (followed by truncation of the resulting candidate solutions to the variable limits) or just the truncation operator. Notice that candidate solutions are always truncated at the end of the variation stack.<br />
-</li>
+<li>fourth operator: can be either <em>Local search</em> or <em>none</em>.</li>
+<li>after the four operators have been executed, the variation stack wraps up by truncating solutions to the variable limits. This is done simply to prevent problems with some test functions that return NaN’s for points outside their domains.</li>
 <li>specific parameters of each operator are tuned independently for each position (e.g., if a configuration with two sequential SBX operators happens, each one has its own independent set of parameters)<br />
 </li>
 <li>local search done probabilistically (using <span class="math inline">\(\gamma_{ls}\in(0,0.5)\)</span>) when local search is present.<br />
