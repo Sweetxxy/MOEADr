@@ -239,8 +239,9 @@ moead <- function(problem,      # List:  MObj problem
                   ...)          # other parameters
 {
   moead.input.pars <- as.list(sys.call())[-1]
-  if (("save.env" %in% names(moead.input.pars)) & moead.input.pars$save.env == TRUE){
-    saveRDS(as.list(environment()), "moead_env.rds")
+  if ("save.env" %in% names(moead.input.pars)) {
+    if (moead.input.pars$save.env == TRUE) saveRDS(as.list(environment()),
+                                                   "moead_env.rds")
   }
 
   # ============== Error catching and default value definitions ============== #
@@ -300,8 +301,9 @@ moead <- function(problem,      # List:  MObj problem
     # Update iteration counter
     iter <- iter + 1
 
-    if (("save.iters" %in% names(moead.input.pars)) & moead.input.pars$save.iters == TRUE){
-      saveRDS(as.list(environment()), "moead_iter.rds")
+    if ("save.iters" %in% names(moead.input.pars)) {
+      if (moead.input.pars$save.iters == TRUE) saveRDS(as.list(environment()),
+                                                       "moead_env.rds")
     }
 
     # ========== Neighborhoods
