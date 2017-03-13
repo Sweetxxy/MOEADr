@@ -1,0 +1,13 @@
+# 2017-03-12 11:59:20 BRT: Launch race
+  Markers:
+     x No test is performed.
+     - The test is performed and some configurations are discarded.
+     = The test is performed but no configuration is discarded.
+     ! The test is performed and configurations could be discarded but elite configurations are preserved.
+                                                                   
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+| |   Instance|      Alive|       Best|      Mean best| Exp so far|  W time|  rho|KenW|  Qvar|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+|x|          1|       1785|        168|  0.05294577880|       1785|02:37:17|   NA|  NA|    NA|
+|x|          2|       1785|        900|  0.07546849918|       3570|04:25:19|+0.58|0.79|0.3483|
+|x|          3|       1785|        430|  0.06591662075|       5355|02:30:47|+0.59|0.73|0.3493|

@@ -2,9 +2,6 @@
 .Rhistory
 .Rapp.history
 
-# tmp save files
-.Rdata
-.rds
 # Session Data files
 .RData
 # Example code in package build process
