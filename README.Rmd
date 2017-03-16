@@ -24,23 +24,25 @@ The reference Pareto-optimal points used for the IGD calculations were obtained 
 
 ### Initial setup
 ```{r, eval = FALSE}
-suppressPackageStartupMessages(require(irace))
-suppressPackageStartupMessages(require(parallel))
-suppressPackageStartupMessages(require(smoof))
 suppressPackageStartupMessages(require(MOEADr))
-if (packageVersion("MOEADr") != "0.1.0.0") {
-  stop("Wrong MOEADr version: please install the manuscript version using the code block above")
+suppressPackageStartupMessages(require(parallel))
+suppressPackageStartupMessages(require(irace)) # <-- use install.packages("irace") if needed
+suppressPackageStartupMessages(require(smoof)) # <-- use install.packages("smoof") if needed
+
+if (packageVersion("MOEADr") != "0.2.0.0") {
+  stop("Wrong MOEADr version: please install the manuscript version using the previous code block")
 }
 
 # Build scenario
-scenario               <- irace::defaultScenario()
-nc                     <- parallel::detectCores() - 1
-scenario$parallel      <- nc # Number of cores to be used by irace
-scenario$seed          <- 123456 # Seed for the experiment
-scenario$targetRunner  <- "target.runner" # Runner function (def. below)
-scenario$forbiddenFile <- "./Experiments/Irace tuning/forbidden.txt"
+scenario                     <- irace::defaultScenario()
+nc                           <- parallel::detectCores() - 1
+scenario$parallel            <- nc # Number of cores to be used by irace
+scenario$seed                <- 123456 # Seed for the experiment
+scenario$logFile             <- "./Experiments/Irace tuning/irace.Rdata"
+scenario$targetRunner        <- "target.runner" # Runner function (def. below)
+scenario$forbiddenFile       <- "./Experiments/Irace tuning/forbidden.txt"
 scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
-scenario$maxExperiments      <- 20000 # Tuning budget
+scenario$maxExperiments      <- 75000 # Tuning budget
 
 # Read tunable parameter list from file
 parameters <- readParameters("./Experiments/Irace tuning/parameters.txt")
@@ -198,7 +200,7 @@ After performing the experimental setup, the experiment can be performed by simp
 
 ```{r, eval = FALSE}
 irace.output <- irace::irace(scenario, parameters)
-saveRDS(irace.output, "./Experiments/Irace tuning/RESULTS.rds")
+saveRDS(irace.output, "./Experiments/Irace tuning/experiment_RESULTS.rds")
 ```
 
 *** 
