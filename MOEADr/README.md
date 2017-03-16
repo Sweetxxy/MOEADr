@@ -9,7 +9,6 @@ Belo Horizonte, Brazil
 
   
 [Claus Aranha](mailto:caranha@cs.tsukuba.ac.jp)  
-Division of Information Engineering  
 Faculty of Engineering, Information and Systems  
 University of Tsukuba  
 Tsukuba, Japan
