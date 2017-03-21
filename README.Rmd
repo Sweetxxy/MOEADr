@@ -57,7 +57,12 @@ This tuning experiment was intended at exploring the potential of the MOEADr fra
 - Aggregation functions: WT, AWT, and PBI. *Inverted PBI* was not included as a possible scalarization function, since we couldn't validate the MOEADr implementation against the original code (our attempts to reach the author remain unanswered)
 - Decomposition strategies: SLD and Uniform. *MSLD* was not included as a possible decomposition method, since we are dealing only with 2 and 3 objectives, which makes it generally unnecessary.
 
+***
+# Experiment 2: Replicating MOEA/D and MOEA/D-DE
 
-## References
+
+
+***
+# References
 
 - [1] L. Bezerra, M. Lopez-Ibanez, T. Stutzle, "Automatic Component-wise Design of Multi-objective Evolutionary Algorithms". DOI: [10.1109/TEVC.2015.2474158](http://dx.doi.org/10.1109/TEVC.2015.2474158).  
