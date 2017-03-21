@@ -1,214 +1,52 @@
 ---
-title: "MOEADr tuning experiments"
-author: Felipe Campelo
+title: "MOEADr Experiments"
+author: Felipe Campelo, Lucas Batista, Claus Aranha
 output: html_document
 ---
 
-This file describes the routines for the tuning experiments using the MOEADr package, as part of the results section of the manuscript. 
+This file describes how to reproduce the experiments using the MOEADr package, as 
+part of the results section of the manuscript "_A Component-Wise Perspective on 
+Multiobjective Evolutionary Algorithms based on Decomposition_". 
 
 ***
+# Experiment 1: MOEADr + irace
 
-## Experimental Setup
-
-### Introduction
+## Introduction
 This section contains the experimental setup for the MOEA/D tuning experiments using the MOEADr framework. In this experiment we employ the standard implementation of the [Iterated Racing](http://iridia.ulb.ac.be/irace/), available in the R package [irace](https://cran.r-project.org/web/packages/irace/index.html) (version 2.1).
 
 The reference Pareto-optimal points used for the IGD calculations were obtained from [Qingfu Zhang's home page](http://dces.essex.ac.uk/staff/qzhang/moeacompetition09.htm), in the *pf_data* folder within [this file](http://dces.essex.ac.uk/staff/qzhang/MOEAcompetition/testproblemsourcecode0904.rar).
 
-### Install manuscript version of the MOEADr package
-```{r, eval = FALSE}
-# Uncomment below to install the exact version used in the manuscript
-# require(devtools)
-# devtools::install_github("fcampelo/MOEADr/MOEADr@Manuscript-Version")
-```
+## How to reproduce the experimental results
+To reproduce the results of the manuscript, follow the instructions below:
 
-### Initial setup
-```{r, eval = FALSE}
-suppressPackageStartupMessages(require(MOEADr))
-suppressPackageStartupMessages(require(parallel))
-suppressPackageStartupMessages(require(irace)) # <-- use install.packages("irace") if needed
-suppressPackageStartupMessages(require(smoof)) # <-- use install.packages("smoof") if needed
+1. First download the _Manuscript-Version_ branch of the [MOEADr repository](https://github.com/fcampelo/MOEADr/tree/Manuscript-Version) ([click here](https://github.com/fcampelo/MOEADr/archive/Manuscript-Version.zip) for the least-effort way), and unzip it, if needed, in a working folder at your local machine.  
+2. Make sure that the manuscript version of the package is installed (and, if not, install the correct version):
 
-if (packageVersion("MOEADr") != "0.2.0.0") {
-  stop("Wrong MOEADr version: please install the manuscript version using the previous code block")
+```{r, eval = FALSE}
+if (!("MOEADr" %in% rownames(installed.packages())) | (packageVersion("MOEADr") != "0.2.0")) {
+  require(devtools)
+  devtools::install_github("fcampelo/MOEADr/MOEADr@Manuscript-Version")
 }
-
-# Build scenario
-scenario                     <- irace::defaultScenario()
-nc                           <- parallel::detectCores() - 1
-scenario$parallel            <- nc # Number of cores to be used by irace
-scenario$seed                <- 123456 # Seed for the experiment
-scenario$logFile             <- "./Experiments/Irace tuning/irace.Rdata"
-scenario$targetRunner        <- "target.runner" # Runner function (def. below)
-scenario$forbiddenFile       <- "./Experiments/Irace tuning/forbidden.txt"
-scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
-scenario$maxExperiments      <- 75000 # Tuning budget
-
-# Read tunable parameter list from file
-parameters <- readParameters("./Experiments/Irace tuning/parameters.txt")
 ```
 
-### Training instances
-In this experiment we adopted the general idea suggested in [@Bezerra2016], using functions UF1 - UF10 from the the [CEC'2009 benchmark set](http://dces.essex.ac.uk/staff/qzhang/moeacompetition09.htm) and employing disjoint sets of problem dimensions for tuning and evaluation, with $n_v^{tune} \in \left\{20,\dotsc,60\right\} \backslash n_v^{test}$ and $n_v^{test} \in \left\{30,40,50\right\}$. The standard implementations of these functions available in the R package [smoof](https://cran.r-project.org/web/packages/smoof/index.html) (version 1.4) were used.
+3. Set the working directory of the analysis as the folder where you saved the files.
+
+4. Run the script *run_irace_experiment.R*:
+
+```{r, eval = FALSE}
+source("run_irace_experiment.R")
+```
+
+## Training instances
+In this experiment we adopted the general idea suggested by Bezerra et al. [1], using functions UF1 - UF10 from the the [CEC'2009 benchmark set](http://dces.essex.ac.uk/staff/qzhang/moeacompetition09.htm) and employing disjoint sets of problem dimensions for tuning and evaluation, with $n_v^{tune} \in \left\{20,\dotsc,60\right\} \backslash n_v^{test}$ and $n_v^{test} \in \left\{30,40,50\right\}$. The standard implementations of these functions available in the R package [smoof](https://cran.r-project.org/web/packages/smoof/index.html) (version 1.4) were used.
 
 Following the [definitions of the CEC'2009 competition](http://dces.essex.ac.uk/staff/qzhang/moeacompetition09.htm), the number of subproblems used was fixed as 100 for $m = 2$, and 150 for $m = 3$ (for the Simplex Lattice Design the actual number was 153 for $m = 3$, given the specifics of this method. Please refer to the manuscript for details).
 
-```{r, eval = FALSE}
-fname   <- paste0("UF_", 1:10)
-dims    <- c(20:29,
-             31:39,
-             41:49,
-             51:60)
-allfuns <- expand.grid(fname, dims, stringsAsFactors = FALSE)
 
-scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
-
-# define all training functions
-for (i in 1:nrow(allfuns)){
-  assign(x     = scenario$instances[i], 
-         value = make_vectorized_smoof(prob.name  = "UF", 
-                                       dimensions = allfuns[i, 2],
-                                       id         = as.numeric(strsplit(allfuns[i, 1], "_")[[1]][2])))
-}
-
-```
-
-### targetRunner function for _irace_
-
-```{r, eval = FALSE}
-target.runner <- function(experiment, scenario){
-  force(experiment)
-
-  conf <- experiment$configuration
-  inst <- experiment$instance
-
-  #=============================================
-  # Assemble moead input lists
-  ## 1. Problem
-  fdef    <- unlist(strsplit(inst, split = "_"))
-  uffun   <- smoof::makeUFFunction(dimensions = as.numeric(fdef[3]),
-                                   id         = as.numeric(fdef[2]))
-  fattr   <- attr(uffun, "par.set")
-  problem <- list(name       = inst,
-                  xmin       = fattr$pars$x$lower,
-                  xmax       = fattr$pars$x$upper,
-                  m          = attr(uffun, "n.objectives"))
-
-  ##===============
-  ## 2. Decomp
-  decomp <- list(name = conf$decomp.name)
-  if (problem$m == 2){ # <-- 2 objectives
-    if(decomp$name == "SLD") decomp$H <- 99 # <-- yields N = 100
-    if(decomp$name == "Uniform") decomp$N <- 100
-  } else { # <-- 3 objectives
-    if(decomp$name == "SLD") decomp$H <- 16 # <-- yields N = 153
-    if(decomp$name == "Uniform") decomp$N <- 150
-  }
-
-  ##===============
-  ## 3. Neighbors
-  neighbors <- list(name    = conf$neighbor.name,
-                    T       = conf$T,
-                    delta.p = conf$delta.p)
-
-  ##===============
-  ## 4. Aggfun
-  aggfun <- list(name = conf$aggfun.name)
-  if (aggfun$name == "PBI") aggfun$theta <- conf$aggfun.theta
-
-  ##===============
-  ## 5. Update
-  update <- list(name       = conf$update.name,
-                 UseArchive = conf$UseArchive)
-  if (update$name != "standard") update$nr <- conf$nr
-  if (update$name == "best") update$Tr <- conf$Tr
-
-  ##===============
-  ## 6. Scaling
-  scaling <- list(name = "simple")
-
-  ##===============
-  ## 7. Constraint
-  constraint<- list(name = "none")
-
-  ##===============
-  ## 8. Stop criterion
-  stopcrit  <- list(list(name    = "maxeval",
-                         maxeval = 100000))
-
-  ##===============
-  ## 9. Echoing
-  showpars  <- list(show.iters = "dots", showevery = 100)
-
-  ##===============
-  ## 10. Variation stack
-  variation <- list(list(name = conf$varop1),
-                    list(name = conf$varop2),
-                    list(name = conf$varop3),
-                    list(name = conf$varop4),
-                    list(name = "truncate"))
-
-  for (i in seq_along(variation)){
-    if (variation[[i]]$name == "binrec") {
-      variation[[i]]$rho <- get(paste0("binrec.rho", i), conf)
-    }
-    if (variation[[i]]$name == "diffmut") {
-      variation[[i]]$basis <- "rand"
-      variation[[i]]$Phi   <- NULL
-    }
-    if (variation[[i]]$name == "polymut") {
-      variation[[i]]$etam <- get(paste0("polymut.eta", i), conf)
-      variation[[i]]$pm   <- get(paste0("polymut.pm", i), conf)
-    }
-    if (variation[[i]]$name == "sbx") {
-      variation[[i]]$etax <- get(paste0("sbx.eta", i), conf)
-      variation[[i]]$pc   <- get(paste0("sbx.pc", i), conf)
-    }
-    if (variation[[i]]$name == "localsearch") {
-      variation[[i]]$type     <- conf$ls.type
-      variation[[i]]$gamma.ls <- conf$gamma.ls
-    }
-  }
-
-  ##===============
-  ## 11. Seed
-  seed <- conf$seed
-
-  # saveRDS(list(problem = problem, decomp = decomp,
-  #              aggfun = aggfun, neighbors = neighbors,
-  #              variation = variation, update = update,
-  #              constraint = constraint, scaling = scaling,
-  #              stopcrit = stopcrit, showpars = showpars,
-  #              seed = seed), "tmp.rds")
-  #=============================================
-  # Run MOEA/D
-  out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
-               constraint, scaling, stopcrit, showpars, seed)
-
-  #=============================================
-  # return IGD
-  Yref <- as.matrix(read.table(paste0("./Experiments/Irace tuning/pf_data/",
-                                      fdef[1], fdef[2], ".dat")))
-  return(list(cost = calcIGD(Y = out$Y, Yref = Yref)))
-}
-```
-
-***
-
-## Running the experiment
-After performing the experimental setup, the experiment can be performed by simply executing the _irace_ routine.
-
-```{r, eval = FALSE}
-irace.output <- irace::irace(scenario, parameters)
-saveRDS(irace.output, "./Experiments/Irace tuning/experiment_RESULTS.rds")
-```
-
-*** 
-
-## Comments regarding the design of this experiment
+## Further comments regarding the design of this experiment
 This tuning experiment was intended at exploring the potential of the MOEADr framework in leveraging the capabilities of automated algorithm assembly / tuning offered by the Iterated Racing method. Some design decisions had to be made in the design of this experiment, as detailed below (for a complete view of the search space for tuning, see file _./Experiments/irace tuning/parameters.txt_)
 
-- Constraint handling: *none* (since the problems are unconstrained)
+- constraint handling: *none* (since the problems are unconstrained)
 - Variation stack: we opted for defining a variation stack with between 3 and 4 operators, using the following rationale:  
 - first and second operators chosen from the existing "traditional" variation operators available in the MOEADr package: *SBX*, *Polynomial mutation*, *Differential mutation*, and *Binomial Recombination*  
 - third operator: can be any of the operators listed above, or *none* (in which case a third operator is not included)  
@@ -222,26 +60,4 @@ This tuning experiment was intended at exploring the potential of the MOEADr fra
 
 ## References
 
----
-references:
-- id: Bezerra2016
-  title: 'Automatic Component-wise Design of Multi-objective Evolutionary
-Algorithms'
-  author: 
-    - family: Bezerra
-      given: Leonardo
-    - family: López-Ibañez
-      given: Manuel
-    - family: Stützle
-      given: Thomas
-  container-title: 'IEEE Trans. Evol. Comp.'
-  volume: 20
-  issue: 3
-  page: 403-417
-  issued:
-    year: 2016
-    month: 8
-  URL: 'http://dx.doi.org/10.1109/TEVC.2015.2474158'
-  DOI: 10.1109/TEVC.2015.2474158
-  type: article-journal
----
+- [1] L. Bezerra, M. Lopez-Ibanez, T. Stutzle, "Automatic Component-wise Design of Multi-objective Evolutionary Algorithms". DOI: [10.1109/TEVC.2015.2474158](http://dx.doi.org/10.1109/TEVC.2015.2474158).  

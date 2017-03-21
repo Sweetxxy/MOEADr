@@ -1,8 +1,4 @@
-# This is an R-script version of README.Rmd, which is to be used when actually
-# running the experiment
-#
-# This file was generated using knitr::purl("README.Rmd"), followed by
-# uncommenting the relevant code blocks and a suitable name-change.
+# MOEA/D assembling experiment using Irace
 
 #===============
 ### Install manuscript version of the MOEADr package
@@ -16,38 +12,38 @@ suppressPackageStartupMessages(require(irace))
 suppressPackageStartupMessages(require(parallel))
 suppressPackageStartupMessages(require(smoof))
 suppressPackageStartupMessages(require(MOEADr))
-if (packageVersion("MOEADr") != "0.1.0.0") {
+if (packageVersion("MOEADr") != "0.2.0") {
   stop("Wrong MOEADr version: please install the manuscript version using the code block above")
 }
 
+#===============
 # Build scenario
-scenario               <- irace::defaultScenario()
-nc                     <- parallel::detectCores() - 1
-scenario$parallel      <- nc # Number of cores to be used by irace
-scenario$seed          <- 123456 # Seed for the experiment
-scenario$targetRunner  <- "target.runner" # Runner function (def. below)
-scenario$forbiddenFile <- "./Experiments/Irace tuning/forbidden.txt"
-scenario$debugLevel    <- 10
-scenario$targetRunnerRetries <- 0 # Retries if targetRunner fails to run
-scenario$maxExperiments      <- 20000 # Tuning budget
+scenario                <- irace::defaultScenario()
+scenario$seed           <- 123456 # Seed for the experiment
+scenario$targetRunner   <- "target.runner" # Runner function (def. below)
+scenario$forbiddenFile  <- "./Experiments/Irace tuning/forbidden.txt" # forbidden configs
+scenario$debugLevel     <- 1
+scenario$maxExperiments <- 20000 # Tuning budget
 
+# Number of cores to be used by irace (set with caution!)
+nc                      <- parallel::detectCores() - 1
+scenario$parallel       <- nc
 
 # Read tunable parameter list from file
 parameters <- readParameters("./Experiments/Irace tuning/parameters.txt")
 
 
 #===============
-### Training instances
+### Build training instances
 fname   <- paste0("UF_", 1:10)
 dims    <- c(20:29,
              31:39,
              41:49,
              51:60)
-allfuns <- expand.grid(fname, dims, stringsAsFactors = FALSE)
 
+allfuns            <- expand.grid(fname, dims, stringsAsFactors = FALSE)
 scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
 
-# define all training functions
 for (i in 1:nrow(allfuns)){
   assign(x     = scenario$instances[i],
          value = make_vectorized_smoof(prob.name  = "UF",
@@ -55,14 +51,15 @@ for (i in 1:nrow(allfuns)){
                                        id         = as.numeric(strsplit(allfuns[i, 1], "_")[[1]][2])))
 }
 
+
 #===============
-### targetRunner function for _irace_
+### Build target runner function for _irace_
 target.runner <- function(experiment, scenario){
   force(experiment)
-  
+
   conf <- experiment$configuration
   inst <- experiment$instance
-  
+
   #=============================================
   # Assemble moead input lists
   ## 1. Problem
@@ -74,7 +71,7 @@ target.runner <- function(experiment, scenario){
                   xmin       = fattr$pars$x$lower,
                   xmax       = fattr$pars$x$upper,
                   m          = attr(uffun, "n.objectives"))
-  
+
   ##===============
   ## 2. Decomp
   decomp <- list(name = conf$decomp.name)
@@ -85,42 +82,42 @@ target.runner <- function(experiment, scenario){
     if(decomp$name == "SLD") decomp$H <- 16 # <-- yields N = 153
     if(decomp$name == "Uniform") decomp$N <- 150
   }
-  
+
   ##===============
   ## 3. Neighbors
   neighbors <- list(name    = conf$neighbor.name,
                     T       = conf$T,
                     delta.p = conf$delta.p)
-  
+
   ##===============
   ## 4. Aggfun
   aggfun <- list(name = conf$aggfun.name)
   if (aggfun$name == "PBI") aggfun$theta <- conf$aggfun.theta
-  
+
   ##===============
   ## 5. Update
   update <- list(name       = conf$update.name,
                  UseArchive = conf$UseArchive)
   if (update$name != "standard") update$nr <- conf$nr
-  if (update$name == "best") update$Tr <- conf$Tr
-  
+  if (update$name == "best")     update$Tr <- conf$Tr
+
   ##===============
   ## 6. Scaling
   scaling <- list(name = "simple")
-  
+
   ##===============
   ## 7. Constraint
   constraint<- list(name = "none")
-  
+
   ##===============
   ## 8. Stop criterion
   stopcrit  <- list(list(name    = "maxeval",
                          maxeval = 100000))
-  
+
   ##===============
   ## 9. Echoing
   showpars  <- list(show.iters = "dots", showevery = 100)
-  
+
   ##===============
   ## 10. Variation stack
   variation <- list(list(name = conf$varop1),
@@ -128,7 +125,7 @@ target.runner <- function(experiment, scenario){
                     list(name = conf$varop3),
                     list(name = conf$varop4),
                     list(name = "truncate"))
-  
+
   for (i in seq_along(variation)){
     if (variation[[i]]$name == "binrec") {
       variation[[i]]$rho <- get(paste0("binrec.rho", i), conf)
@@ -150,22 +147,17 @@ target.runner <- function(experiment, scenario){
       variation[[i]]$gamma.ls <- conf$gamma.ls
     }
   }
-  
+
   ##===============
   ## 11. Seed
   seed <- conf$seed
-  
-  # saveRDS(list(problem = problem, decomp = decomp,
-  #              aggfun = aggfun, neighbors = neighbors,
-  #              variation = variation, update = update,
-  #              constraint = constraint, scaling = scaling,
-  #              stopcrit = stopcrit, showpars = showpars,
-  #              seed = seed), "tmp.rds")
+
+
   #=============================================
   # Run MOEA/D
   out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
                constraint, scaling, stopcrit, showpars, seed)
-  
+
   #=============================================
   # return IGD
   Yref <- as.matrix(read.table(paste0("./Experiments/Irace tuning/pf_data/",
@@ -177,18 +169,3 @@ target.runner <- function(experiment, scenario){
 irace.output <- irace::irace(scenario, parameters)
 saveRDS(irace.output, "./Experiments/Irace tuning/RESULTS.rds")
 
-# a <- readRDS("moead_env.rds")
-# problem    <- a$problem
-# decomp     <- a$decomp
-# aggfun     <- a$aggfun
-# neighbors  <- a$neighbors
-# variation  <- a$variation
-# update     <- a$update
-# constraint <- a$constraint
-# scaling    <- a$scaling
-# stopcrit   <- a$stopcrit
-# showpars   <- a$showpars
-# seed       <- a$seed
-# out <- moead(problem, decomp,  aggfun, neighbors, variation, update,
-#              constraint, scaling, stopcrit, showpars, seed,
-#              save.iters = TRUE, save.env = TRUE)
