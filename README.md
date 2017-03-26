@@ -155,7 +155,7 @@ showpars <- list(show.iters = "none") # <-- do not echo the iterations
 seed <- 123 # <-- for reproducibility
 ```
 
-We can now run the MOEA/D-DE as described in [2] on the sameZDT1 problem: 
+We can now run the MOEA/D-DE as described in [2] (Sections III-A and IV-A) on the sameZDT1 problem: 
 
 
 ```r
