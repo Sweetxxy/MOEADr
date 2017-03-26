@@ -25,6 +25,7 @@ scenario$forbiddenFile  <- "./Experiments/Irace tuning/forbidden.txt" # forbidde
 scenario$debugLevel     <- 1
 scenario$maxExperiments <- 20000 # Tuning budget
 
+
 # Number of cores to be used by irace (set with caution!)
 nc                      <- parallel::detectCores() - 1
 scenario$parallel       <- nc
@@ -46,6 +47,18 @@ scenario$instances <- paste0(allfuns[,1], "_", allfuns[,2])
 
 for (i in 1:nrow(allfuns)){
   assign(x     = scenario$instances[i],
+         value = make_vectorized_smoof(prob.name  = "UF",
+                                       dimensions = allfuns[i, 2],
+                                       id         = as.numeric(strsplit(allfuns[i, 1], "_")[[1]][2])))
+}
+
+### Build test instances
+dims                   <- c(30, 40, 50)
+allfuns                <- expand.grid(fname, dims, stringsAsFactors = FALSE)
+scenario$testInstances <- paste0(allfuns[,1], "_", allfuns[,2])
+
+for (i in 1:nrow(allfuns)){
+  assign(x     = scenario$testInstances[i],
          value = make_vectorized_smoof(prob.name  = "UF",
                                        dimensions = allfuns[i, 2],
                                        id         = as.numeric(strsplit(allfuns[i, 1], "_")[[1]][2])))
@@ -116,7 +129,7 @@ target.runner <- function(experiment, scenario){
 
   ##===============
   ## 9. Echoing
-  showpars  <- list(show.iters = "dots", showevery = 100)
+  showpars  <- list(show.iters = "none")
 
   ##===============
   ## 10. Variation stack

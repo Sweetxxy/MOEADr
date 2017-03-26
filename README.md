@@ -17,7 +17,8 @@ This section presents the replication of published MOEA/D variants using the MOE
 
 MOEADr-compliant test functions (see Vignette [Defining Problems in the MOEADr Package](https://cran.r-project.org/web/packages/MOEADr/vignettes/problem-definition.html)) can be built using, e.g.:
 
-```{r, eval = TRUE}
+
+```r
 suppressPackageStartupMessages(library(smoof))
 suppressPackageStartupMessages(library(MOEADr))
 
@@ -29,7 +30,8 @@ ZDT1  <- make_vectorized_smoof(prob.name  = "ZDT1",
 ### 1. Original MOEA/D
 The original MOEA/D paper [1] reports two versions of this algorithm. Here we reproduce the first one, reported in Section V-E, pp.721-722. In the MOEADr framework, we define this method using:
 
-```{r, eval = TRUE}
+
+```r
 problem   <- list(name       = "ZDT1",     # <-- function name
                   xmin       = rep(0, 30), # <-- upper limits for variables
                   xmax       = rep(1, 30), # <-- lower limits for variables
@@ -70,23 +72,27 @@ seed <- 123 # <-- for reproducibility
 
 We can now run this algorithm version on the ZDT1 problem: 
 
-```{r, eval = TRUE, cache = TRUE}
+
+```r
 out <- moead(problem, decomp, aggfun, neighbors, variation, update,
               constraint, scaling, stopcrit, showpars, seed)
 ```
 
-```{r, eval = TRUE, fig.align="center",fig.height=6,fig.width=6}
+
+```r
 # plot output
 suppressPackageStartupMessages(library(emoa)) # <-- for function nondominated_points()
 Y <- t(nondominated_points(t(out$Y))) # <-- isolate only the nondominated points returned
 plot(Y[,1], Y[,2], type = "p", pch = 20, 
      main = "Original MOEA/D on ZDT1", xlab = "f1", ylab = "f2", las = 1)
-
 ```
+
+<img src="figure/unnamed-chunk-4-1.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" style="display: block; margin: auto;" />
 
 If we want to reproduce the second version suggested in [1] (Section sec. V-F, p. 724), it is just a matter of changing a few definitions:
 
-```{r, eval = TRUE, cache = TRUE}
+
+```r
 aggfun <- list(name  = "PBI", # <-- aggregation using PBI, with
                 theta = 5)    # <-- theta = 5
 
@@ -96,12 +102,15 @@ out <- moead(problem, decomp, aggfun, neighbors, variation, update,
               constraint, scaling, stopcrit, showpars, seed)
 ```
 
-```{r, eval = TRUE, fig.align="center",fig.height=6,fig.width=6}
+
+```r
 # plot output
 Y <- t(nondominated_points(t(out$Y)))
 plot(Y[,1], Y[,2], type = "p", pch = 20, 
      main = "Original MOEA/D (version 2) on ZDT1", xlab = "f1", ylab = "f2", las = 1)
 ```
+
+<img src="figure/unnamed-chunk-6-1.png" title="plot of chunk unnamed-chunk-6" alt="plot of chunk unnamed-chunk-6" style="display: block; margin: auto;" />
 
 ### 2. MOEA/D-DE
 Li and Zhang [2] proposed a variant of the MOEA/D in 2009, in which the SBX recombination is replaced by the usual Differential Evolution operators, namely the (/rand/1)-differential mutation followed by binomial recombination. However, since the authors use a recombination factor $\rho = 1$ (defined in the paper with the more traditional notation $CR = 1$), this essentially amounts as using only the differential mutation and passing the resulting vector forward, without any recombination with the corresponding incumbent solution.
@@ -110,7 +119,8 @@ This variant is defined by vector generation using SLD, weighted Tchebycheff agg
 
 We can reproduce the version described in the paper using:
 
-```{r, eval = TRUE}
+
+```r
 decomp <- list(name = "SLD", # <-- Simplex-lattice decomposition, with
                 H    = 299)  # <-- h = 299 (= 300 subproblems in 2-obj problems)
 
@@ -147,18 +157,21 @@ seed <- 123 # <-- for reproducibility
 
 We can now run the MOEA/D-DE as described in [2] on the sameZDT1 problem: 
 
-```{r, eval = TRUE, cache = TRUE}
+
+```r
 out <- moead(problem, decomp, aggfun, neighbors, variation, update,
               constraint, scaling, stopcrit, showpars, seed)
 ```
 
-```{r, eval = TRUE, fig.align="center",fig.height=6,fig.width=6}
+
+```r
 # plot output
 Y <- t(nondominated_points(t(out$Y)))
 plot(Y[,1], Y[,2], type = "p", pch = 20, 
      main = "MOEA/D-DE on ZDT1", xlab = "f1", ylab = "f2", las = 1)
-
 ```
+
+<img src="figure/unnamed-chunk-9-1.png" title="plot of chunk unnamed-chunk-9" alt="plot of chunk unnamed-chunk-9" style="display: block; margin: auto;" />
 
 ***
 ***
@@ -176,7 +189,8 @@ To reproduce the results of the manuscript, follow the instructions below:
 1. First download the _Manuscript-Version_ branch of the [MOEADr repository](https://github.com/fcampelo/MOEADr/tree/Manuscript-Version) ([click here](https://github.com/fcampelo/MOEADr/archive/Manuscript-Version.zip) for the least-effort way), and unzip it, if needed, in a working folder at your local machine.  
 2. Make sure that the manuscript version of the package is installed (and, if not, install the correct version):
 
-```{r, eval = FALSE}
+
+```r
 if (!("MOEADr" %in% rownames(installed.packages())) | (packageVersion("MOEADr") != "0.2.0")) {
   require(devtools)
   devtools::install_github("fcampelo/MOEADr/MOEADr@Manuscript-Version")
@@ -187,7 +201,8 @@ if (!("MOEADr" %in% rownames(installed.packages())) | (packageVersion("MOEADr") 
 
 4. Run the script *run_irace_experiment.R*:
 
-```{r, eval = FALSE}
+
+```r
 source("run_irace_experiment.R")
 ```
 
