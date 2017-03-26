@@ -126,7 +126,7 @@ decomp <- list(name = "SLD", # <-- Simplex-lattice decomposition, with
 
 neighbors <- list(name    = "lambda", # <-- weight-based neighborhood, with 
                   T       = 20,       # <-- neighborhood size T = 20 and
-                  delta.p = 0.9)      # <-- sampling only from the neighborhood
+                  delta.p = 0.9)      # <-- sampling 90% from the neighborhood
 
 aggfun <- list(name = "wt") # <-- aggregation using weighted Tchebycheff function
 
