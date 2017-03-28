@@ -181,4 +181,8 @@ target.runner <- function(experiment, scenario){
 ## Running the experiment
 irace.output <- irace::irace(scenario, parameters)
 saveRDS(irace.output, "./Experiments/Irace tuning/RESULTS.rds")
+file.copy(from = "./irace.Rdata", to = "./Experiments/Irace tuning/irace-tuning.Rdata")
+
+## Test returned configurations on test instances
+testing.main(logFile = "./Experiments/Irace tuning/irace-tuning.Rdata")
 
