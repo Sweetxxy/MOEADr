@@ -144,7 +144,7 @@ target.runner <- function(experiment, scenario){
       variation[[i]]$rho <- get(paste0("binrec.rho", i), conf)
     }
     if (variation[[i]]$name == "diffmut") {
-      variation[[i]]$basis <- "rand"
+      variation[[i]]$basis <- get(paste0("diffmut.basis", i), conf)
       variation[[i]]$Phi   <- NULL
     }
     if (variation[[i]]$name == "polymut") {
