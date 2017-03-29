@@ -24,7 +24,7 @@ scenario$targetRunner   <- "target.runner" # Runner function (def. below)
 scenario$forbiddenFile  <- "./Experiments/Irace tuning/forbidden.txt" # forbidden configs
 scenario$debugLevel     <- 1
 scenario$maxExperiments <- 20000 # Tuning budget
-
+scenario$testNbElites   <- 7     # test all final elite configurations
 
 # Number of cores to be used by irace (set with caution!)
 nc                      <- parallel::detectCores() - 1
@@ -178,11 +178,79 @@ target.runner <- function(experiment, scenario){
   return(list(cost = calcIGD(Y = out$Y, Yref = Yref)))
 }
 
+
 ## Running the experiment
 irace.output <- irace::irace(scenario, parameters)
 saveRDS(irace.output, "./Experiments/Irace tuning/RESULTS.rds")
 file.copy(from = "./irace.Rdata", to = "./Experiments/Irace tuning/irace-tuning.Rdata")
 
+
 ## Test returned configurations on test instances
 testing.main(logFile = "./Experiments/Irace tuning/irace-tuning.Rdata")
+file.copy(from = "./irace.Rdata", to = "./Experiments/Irace tuning/irace-testing.Rdata")
 
+
+### ===========================================================================
+# Generate results plot
+## (loosely inspired on section 9.3 of 
+# https://cran.r-project.org/web/packages/irace/vignettes/irace-package.pdf)
+
+## Load results
+load("./Experiments/Irace tuning/irace-testing.Rdata")
+
+### Precondition results
+require(reshape2)
+results <- iraceResults$testing$experiments
+res.df <- data.frame(do.call(rbind, strsplit(rownames(results), "_")), 
+                     results, 
+                     stringsAsFactors = FALSE)[, -1]
+colnames(res.df)  <- c("Problem", "Dimension", 1:(ncol(res.df)-2))
+res.df$Problem <- sprintf("%02d", as.numeric(res.df$Problem))
+res.df$Objectives <- ifelse(res.df$Problem %in% c("08", "09", "10"),
+                            yes = "3 obj.",
+                            no  = "2 obj")
+res.df$Dimension <- paste0("Dim = ", res.df$Dimension)
+res.df <- reshape2::melt(res.df, value.name = "IGD")
+names(res.df)[4] <- "Configuration"
+
+## Plot resulting IGD of best configurations returned, by problem and dimension
+require(ggplot2)
+ml2 <- theme(axis.title  = element_text(size = 18),
+             axis.text   = element_text(size = 18),
+             legend.text = element_text(size = 18))
+
+mp <- ggplot(res.df, aes(x      = Problem, 
+                         y      = IGD, 
+                         colour = Configuration, 
+                         group  = Configuration))
+
+png(file  = "figure/IGD-testing-finalConfs.png",
+    width = 15, height = 5, units = "in", res = 300)
+mp + 
+  geom_boxplot(aes(fill   = NULL, 
+                   colour = NULL, 
+                   group  = Problem), 
+               alpha = 0.6, 
+               lwd   = 0.1) +
+  geom_point() + geom_line() +
+  facet_grid(.~Dimension) +
+  ml2
+dev.off()
+
+
+## Plot relevant parameter frequency:
+### Select output "elite" variables
+indx <- iraceResults$allElites[[length(iraceResults$allElites)]]
+finalConfs <- iraceResults$allConfigurations[indx,]
+
+### change internal structure of "parameters" to allow using function 
+### irace::parameterFrequency() 
+mypars <- iraceResults$parameters
+mypars$names      <- c("T", "delta.p", "binrec.rho2", "binrec.rho3")
+mypars$nbVariable <- 4
+
+### Plot
+png(file  = "figure/finalConfs_numpars.png",
+    width = 5, height = 5, units = "in", res = 300)
+parameterFrequency(finalConfs, mypars, cols = 2)
+dev.off()
