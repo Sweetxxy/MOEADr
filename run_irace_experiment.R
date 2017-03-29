@@ -215,6 +215,7 @@ names(res.df)[4] <- "Configuration"
 
 ## Plot resulting IGD of best configurations returned, by problem and dimension
 require(ggplot2)
+library(tikzDevice)
 ml2 <- theme(axis.title  = element_text(size = 18),
              axis.text   = element_text(size = 18),
              legend.text = element_text(size = 18))
@@ -224,8 +225,9 @@ mp <- ggplot(res.df, aes(x      = Problem,
                          colour = Configuration, 
                          group  = Configuration))
 
-png(file  = "figure/IGD-testing-finalConfs.png",
-    width = 15, height = 5, units = "in", res = 300)
+tikz("figure/IGD-testing-finalConfs.tex",
+     width  = 15,
+     height = 5) 
 mp + 
   geom_boxplot(aes(fill   = NULL, 
                    colour = NULL, 
@@ -250,7 +252,8 @@ mypars$names      <- c("T", "delta.p", "binrec.rho2", "binrec.rho3")
 mypars$nbVariable <- 4
 
 ### Plot
-png(file  = "figure/finalConfs_numpars.png",
-    width = 5, height = 5, units = "in", res = 300)
+tikz("figure/finalConfs-numpars.tex",
+     width  = 5,
+     height = 5) 
 parameterFrequency(finalConfs, mypars, cols = 2)
 dev.off()
